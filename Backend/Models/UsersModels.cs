@@ -9,8 +9,16 @@ public class UsersModels
     }
 
     [Required] public int Id { get; set; }
-    [Required] public Roles Role { get; set; }
+    [Required] public required Roles Role { get; set; }
     [Required] public required string Name { get; set; }
-    [Required] public string? Password { get; set; }
-    [Required] public string? Email { get; set; }
+    [Required] public required string Password { get; set; }
+    [Required] public required string Email { get; set; }
+}
+
+public class CreateUserModel
+{
+    public required string Role { get; set; }
+    public required string Name { get; set; }
+    public required string Password { get; set; }
+    public required string Email { get; set; }
 }

@@ -7,28 +7,26 @@ using Microsoft.Extensions.Caching.Memory;
 public class UsersController : ControllerBase
 {
     private readonly IMemoryCache _memory;
+    private readonly ILogger<UsersController> _logger;
     private readonly UsersContext _usersContext;
 
-    public UsersController(IMemoryCache memory, UsersContext usersContext)
+    public UsersController(IMemoryCache memory, ILogger<UsersController> logger, UsersContext usersContext)
     {
         _memory = memory;
+        _logger = logger;
         _usersContext = usersContext;
     }
 
-    [HttpGet(template: "/list/all")]
-    public async Task<IActionResult> ListAllUsersAction()
-    {
-        var list = await _usersContext.Users.AsNoTracking().ToListAsync();
-
-        return Ok();
-    }
-
     [HttpGet(template: "/list/all/{role?}")]
-    public async Task<IActionResult> ListUsersAction([FromRoute] int? id, [FromRoute] string role = "customer")
+    public async Task<IActionResult> ListUsersAction([FromRoute] string role)
     {
-        if (role == null)
+        if (String.IsNullOrEmpty(role))
         {
-            return RedirectToAction(nameof(ListAllUsersAction));
+            _logger.LogInformation("#### No role informed ####");
+
+            var list = await _usersContext.Users.AsNoTracking().ToListAsync();
+
+            return Ok(list);
         }
         else
         {
@@ -40,14 +38,15 @@ public class UsersController : ControllerBase
             }
             else
             {
+                _logger.LogInformation("#### Error on parse ####");
+
                 return BadRequest($"The following Role doesn't exist: {role}");
             }
         }
-
     }
 
     [HttpGet(template: "/list/{id:int}")]
-    public async Task<IActionResult> ListUsersIdAction([FromRoute] int id, [FromRoute] string role = "customer")
+    public async Task<IActionResult> ListUsersIdAction([FromRoute] int id)
     {
         var user = await _usersContext.Users.AsNoTracking().FirstAsync(u => u.Id == id);
 
@@ -62,14 +61,21 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost(template: "/create/")]
-    public async Task<IActionResult> CreateAction([FromBody] UsersModels user)
+    public async Task<IActionResult> CreateAction([FromBody] CreateUserModel user)
     {
-        if (user != null)
+        if (user != null && Enum.TryParse(user.Role, true, out UsersModels.Roles parseRole))
         {
-            await _usersContext.Users.AddAsync(user);
+            UsersModels newUser = new UsersModels
+            {
+                Role = parseRole,
+                Name = user.Name,
+                Password = user.Password,
+                Email = user.Email,
+            };
+            await _usersContext.Users.AddAsync(newUser);
             await _usersContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(ListUsersIdAction), new { id = user.Id }, user);
+            return CreatedAtAction(nameof(ListUsersIdAction), new { id = newUser.Id }, user);
         }
         else
         {
@@ -84,6 +90,6 @@ public class UsersController : ControllerBase
         _usersContext.Users.Remove(user);
         await _usersContext.SaveChangesAsync();
 
-        return Ok();
+        return NoContent();
     }
 }
