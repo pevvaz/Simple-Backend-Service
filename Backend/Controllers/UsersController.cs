@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-[Controller]
-[Route("service/[controller]")]
+[ApiController]
+[Route(template: "service/[controller]")]
 public class UsersController : ControllerBase
 {
     private readonly IMemoryCache _memory;
@@ -17,8 +17,8 @@ public class UsersController : ControllerBase
         _usersContext = usersContext;
     }
 
-    [HttpGet(template: "/list/all/{role?}")]
-    public async Task<IActionResult> ListUsersAction([FromRoute] string role)
+    [HttpGet(template: "list/all/{role?}")]
+    public async Task<IActionResult> ListUsersAction([FromRoute] string? role = null)
     {
         if (String.IsNullOrEmpty(role))
         {
@@ -45,22 +45,22 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpGet(template: "/list/{id:int}")]
+    [HttpGet(template: "list/{id:int}")]
     public async Task<IActionResult> ListUsersIdAction([FromRoute] int id)
     {
-        var user = await _usersContext.Users.AsNoTracking().FirstAsync(u => u.Id == id);
-
-        if (user != null)
+        try
         {
+            var user = await _usersContext.Users.AsNoTracking().FirstAsync(u => u.Id == id);
+
             return Ok(user);
         }
-        else
+        catch
         {
             return NotFound($"An User of Id: {id} was not found");
         }
     }
 
-    [HttpPost(template: "/create/")]
+    [HttpPost(template: "create/")]
     public async Task<IActionResult> CreateAction([FromBody] CreateUserModel user)
     {
         if (user != null && Enum.TryParse(user.Role, true, out UsersModels.Roles parseRole))
@@ -83,12 +83,19 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpDelete(template: "/delete/{id:int}")]
+    [HttpDelete(template: "delete/{id:int}")]
     public async Task<IActionResult> DeleteAction([FromRoute] int id)
     {
-        var user = await _usersContext.Users.FirstAsync(u => u.Id == id);
-        _usersContext.Users.Remove(user);
-        await _usersContext.SaveChangesAsync();
+        try
+        {
+            var user = await _usersContext.Users.FirstAsync(u => u.Id == id);
+            _usersContext.Users.Remove(user);
+            await _usersContext.SaveChangesAsync();
+        }
+        catch
+        {
+            return NotFound($"An User of Id: {id} was not found");
+        }
 
         return NoContent();
     }
