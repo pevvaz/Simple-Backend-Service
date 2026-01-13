@@ -2,14 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 public class UsersModels
 {
-    public enum Roles
+    public enum RolesEnum
     {
         Admin,
         Customer
     }
 
     [Required] public int Id { get; set; }
-    [Required] public required Roles Role { get; set; }
+    [Required] public required RolesEnum Role { get; set; }
     [Required] public required string Name { get; set; }
     [Required] public required string Password { get; set; }
     [Required] public required string Email { get; set; }

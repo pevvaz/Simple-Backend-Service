@@ -11,6 +11,10 @@ builder.Services.AddDbContext<UsersContext>(opt =>
 {
     opt.UseSqlite(builder.Configuration.GetConnectionString("users"));
 });
+builder.Services.AddDbContext<ProductsContext>(opt =>
+{
+    opt.UseSqlite(builder.Configuration.GetConnectionString("products"));
+});
 
 var app = builder.Build();
 

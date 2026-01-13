@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 [ApiController]
-[Route(template: "service/[controller]")]
+[Route(template: "[controller]")]
 public class UsersController : ControllerBase
 {
     private readonly IMemoryCache _memory;
@@ -22,7 +22,7 @@ public class UsersController : ControllerBase
     {
         if (String.IsNullOrEmpty(role))
         {
-            _logger.LogInformation("#### No role informed ####");
+            _logger.LogInformation("#### No user Role informed ####");
 
             var list = await _usersContext.Users.AsNoTracking().ToListAsync();
 
@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
         }
         else
         {
-            if (Enum.TryParse(role, true, out UsersModels.Roles parseRole))
+            if (Enum.TryParse(role, true, out UsersModels.RolesEnum parseRole))
             {
                 var list = await _usersContext.Users.AsNoTracking().Where(u => u.Role == parseRole).ToListAsync();
 
@@ -61,9 +61,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost(template: "create/")]
-    public async Task<IActionResult> CreateAction([FromBody] CreateUserModel user)
+    public async Task<IActionResult> CreateUserAction([FromBody] CreateUserModel user)
     {
-        if (user != null && Enum.TryParse(user.Role, true, out UsersModels.Roles parseRole))
+        if (user != null && Enum.TryParse(user.Role, true, out UsersModels.RolesEnum parseRole))
         {
             UsersModels newUser = new UsersModels
             {
@@ -75,7 +75,7 @@ public class UsersController : ControllerBase
             await _usersContext.Users.AddAsync(newUser);
             await _usersContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(ListUsersIdAction), new { id = newUser.Id }, user);
+            return CreatedAtAction(nameof(ListUsersIdAction), new { id = newUser.Id }, newUser);
         }
         else
         {
@@ -84,7 +84,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete(template: "delete/{id:int}")]
-    public async Task<IActionResult> DeleteAction([FromRoute] int id)
+    public async Task<IActionResult> DeleteUserAction([FromRoute] int id)
     {
         try
         {
