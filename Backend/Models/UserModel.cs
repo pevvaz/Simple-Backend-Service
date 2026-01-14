@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-public class UsersModels
+public class UserModel
 {
     public enum RolesEnum
     {

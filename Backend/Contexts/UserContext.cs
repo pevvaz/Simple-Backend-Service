@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-public class UsersContext : DbContext
+public class UserContext : DbContext
 {
-    public UsersContext(DbContextOptions<UsersContext> opt) : base(opt) { }
+    public UserContext(DbContextOptions<UserContext> opt) : base(opt) { }
 
-    public DbSet<UsersModels> Users { get; set; }
+    public DbSet<UserModel> Users { get; set; }
 }
