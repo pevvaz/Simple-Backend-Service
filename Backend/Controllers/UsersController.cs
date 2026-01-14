@@ -83,6 +83,52 @@ public class UsersController : ControllerBase
         }
     }
 
+    [HttpPut(template: "update/")]
+    public async Task<IActionResult> UpdateUserAction([FromBody] UpdateUserModel updatedUser)
+    {
+        try
+        {
+            var userToBeUpdated = await _usersContext.Users.FirstAsync(u => u.Id == updatedUser.Id);
+
+            if (userToBeUpdated == null)
+            {
+                return NotFound($"An User of Id: {updatedUser.Id} was not found");
+            }
+
+            if (!String.IsNullOrEmpty(updatedUser.Role))
+            {
+                if (Enum.TryParse(updatedUser.Role, true, out UsersModels.RolesEnum parseEnum))
+                {
+                    userToBeUpdated.Role = parseEnum;
+                }
+                else
+                {
+                    return BadRequest($"The following Role doesn't exist: {updatedUser.Role}");
+                }
+            }
+            if (!String.IsNullOrEmpty(updatedUser.Name))
+            {
+                userToBeUpdated.Name = updatedUser.Name;
+            }
+            if (!String.IsNullOrEmpty(updatedUser.Password))
+            {
+                userToBeUpdated.Password = updatedUser.Password;
+            }
+            if (!String.IsNullOrEmpty(updatedUser.Email))
+            {
+                userToBeUpdated.Email = updatedUser.Email;
+            }
+
+            await _usersContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch
+        {
+            return NotFound($"An User of Id: {updatedUser.Id} was not found");
+        }
+    }
+
     [HttpDelete(template: "delete/{id:int}")]
     public async Task<IActionResult> DeleteUserAction([FromRoute] int id)
     {

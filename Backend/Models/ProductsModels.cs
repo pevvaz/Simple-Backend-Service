@@ -19,7 +19,15 @@ public class ProductsModels
 
 public class CreateProductModel
 {
-    required public string Type { get; set; }
-    required public string Name { get; set; }
-    required public int Price { get; set; }
+    public required string Type { get; set; }
+    public required string Name { get; set; }
+    public required int Price { get; set; }
+}
+
+public class UpdateProductModel
+{
+    public required int Id { get; set; }
+    public string? Type { get; set; }
+    public string? Name { get; set; }
+    public int? Price { get; set; }
 }

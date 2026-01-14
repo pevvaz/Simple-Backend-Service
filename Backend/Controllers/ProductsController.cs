@@ -82,6 +82,36 @@ public class ProductsController : ControllerBase
         }
     }
 
+    [HttpPut(template: "update/")]
+    public async Task<IActionResult> UpdateProductAction([FromBody] UpdateProductModel updatedProduct)
+    {
+        try
+        {
+            var product = await _productsContext.Products.FirstAsync(p => p.Id == updatedProduct.Id);
+
+            if (!String.IsNullOrEmpty(updatedProduct.Name))
+            {
+
+            }
+            if (!String.IsNullOrEmpty(updatedProduct.Name))
+            {
+
+            }
+            if (!String.IsNullOrEmpty(updatedProduct.Name))
+            {
+
+            }
+
+            await _productsContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch
+        {
+            return NotFound($"A Product of Id: {updatedProduct.Id} was not found");
+        }
+    }
+
     [HttpDelete(template: "delete/{id:int}")]
     public async Task<IActionResult> DeleteProductAction([FromRoute] int id)
     {
