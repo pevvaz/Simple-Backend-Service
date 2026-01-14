@@ -24,7 +24,7 @@ public class UserController : ControllerBase
         {
             usersList = await _userContext.Users.AsNoTracking().ToListAsync();
 
-            _memory.Set("list_all", usersList, TimeSpan.FromSeconds(30));
+            _memory.Set("list_all", usersList, TimeSpan.FromMinutes(1));
             _logger.LogInformation("### ListAll cached ###");
         }
 
@@ -45,8 +45,8 @@ public class UserController : ControllerBase
             {
                 usersList = await _userContext.Users.AsNoTracking().Where(u => u.Role == parseRole).ToListAsync();
 
-                _memory.Set($"list_{parseRole}", usersList, TimeSpan.FromSeconds(30));
-                _logger.LogInformation("### ListRole cached ###");
+                _memory.Set($"list_{parseRole}", usersList, TimeSpan.FromMinutes(1));
+                _logger.LogInformation($"### List{parseRole} cached ###");
             }
 
             return Ok(usersList!);
@@ -66,7 +66,7 @@ public class UserController : ControllerBase
             {
                 user = await _userContext.Users.AsNoTracking().FirstAsync(u => u.Id == id);
 
-                _memory.Set($"list_{id}", user, TimeSpan.FromSeconds(30));
+                _memory.Set($"list_{id}", user, TimeSpan.FromMinutes(1));
                 _logger.LogInformation("### ListId cached ###");
             }
             catch
@@ -81,6 +81,11 @@ public class UserController : ControllerBase
     [HttpPost(template: "create/")]
     public async Task<IActionResult> CreateAction([FromBody] CreateUserModel user)
     {
+        if (await _userContext.Users.AsNoTracking().AnyAsync(u => u.Password == user.Password || u.Email == user.Email))
+        {
+            return BadRequest("There's an already User with the same password or Email");
+        }
+
         if (user != null && Enum.TryParse(user.Role, true, out UserModel.RolesEnum parseRole))
         {
             UserModel newUser = new UserModel
@@ -106,40 +111,45 @@ public class UserController : ControllerBase
         }
     }
 
-    [HttpPut(template: "update/")]
-    public async Task<IActionResult> UpdateAction([FromBody] UpdateUserModel updatedUser)
+    [HttpPut(template: "update")]
+    public async Task<IActionResult> UpdateAction([FromBody] UpdateUserModel newValues)
     {
+        if (await _userContext.Users.AsNoTracking().AnyAsync(u => u.Id != newValues.Id && (u.Password == newValues.Password || u.Email == newValues.Email)))
+        {
+            return BadRequest("There's an already User with the same password or Email");
+        }
+
         try
         {
-            var userToBeUpdated = await _userContext.Users.FirstAsync(u => u.Id == updatedUser.Id);
+            var userToBeUpdated = await _userContext.Users.FirstAsync(u => u.Id == newValues.Id);
 
             if (userToBeUpdated == null)
             {
-                return NotFound($"An User of Id: {updatedUser.Id} was not found");
+                return NotFound($"An User of Id: {newValues.Id} was not found");
             }
 
-            if (!String.IsNullOrEmpty(updatedUser.Role))
+            if (!String.IsNullOrEmpty(newValues.Role))
             {
-                if (Enum.TryParse(updatedUser.Role, true, out UserModel.RolesEnum parseEnum))
+                if (Enum.TryParse(newValues.Role, true, out UserModel.RolesEnum parseEnum))
                 {
                     userToBeUpdated.Role = parseEnum;
                 }
                 else
                 {
-                    return BadRequest($"The following Role doesn't exist: {updatedUser.Role}");
+                    return BadRequest($"The following Role doesn't exist: {newValues.Role}");
                 }
             }
-            if (!String.IsNullOrEmpty(updatedUser.Name))
+            if (!String.IsNullOrEmpty(newValues.Name))
             {
-                userToBeUpdated.Name = updatedUser.Name;
+                userToBeUpdated.Name = newValues.Name;
             }
-            if (!String.IsNullOrEmpty(updatedUser.Password))
+            if (!String.IsNullOrEmpty(newValues.Password))
             {
-                userToBeUpdated.Password = updatedUser.Password;
+                userToBeUpdated.Password = newValues.Password;
             }
-            if (!String.IsNullOrEmpty(updatedUser.Email))
+            if (!String.IsNullOrEmpty(newValues.Email))
             {
-                userToBeUpdated.Email = updatedUser.Email;
+                userToBeUpdated.Email = newValues.Email;
             }
 
             await _userContext.SaveChangesAsync();
@@ -154,7 +164,7 @@ public class UserController : ControllerBase
         }
         catch
         {
-            return NotFound($"An User of Id: {updatedUser.Id} was not found");
+            return NotFound($"An User of Id: {newValues.Id} was not found");
         }
     }
 
