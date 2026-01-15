@@ -1,73 +1,119 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 
 [ApiController]
 [Route(template: "[controller]")]
 public class UserController : ControllerBase
 {
+    private readonly IConfiguration _configuration;
     private readonly IMemoryCache _memory;
     private readonly ILogger<UserController> _logger;
     private readonly UserContext _userContext;
 
-    public UserController(IMemoryCache memory, ILogger<UserController> logger, UserContext userContext)
+    public UserController(IConfiguration configuration, IMemoryCache memory, ILogger<UserController> logger, UserContext userContext)
     {
+        _configuration = configuration;
         _memory = memory;
         _logger = logger;
         _userContext = userContext;
     }
 
+    [HttpPost(template: "signin")]
+    public async Task<IActionResult> SignInAction([FromBody] SignInModel data)
+    {
+        try
+        {
+            var user = await _userContext.Users.AsNoTracking().FirstAsync(u => (u.Name == data.NameEmail || u.Email == data.NameEmail) && u.Password == data.Password);
+
+            var tokenDescriptor = new SecurityTokenDescriptor()
+            {
+                Issuer = _configuration["JwtSettings:Issuer"]!,
+                Audience = user.Role.ToString().ToLower(),
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Role, user.Role.ToString().ToLower()),
+                    new Claim(ClaimTypes.Name, user.Name),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Hash, Encoding.UTF8.GetHashCode().ToString())
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(2),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]!)), SecurityAlgorithms.HmacSha256)
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+
+            return Ok(token);
+        }
+        catch
+        {
+            return NotFound("Wrong informations, try again");
+        }
+    }
+
+    [Authorize(Roles = "admin")]
     [HttpGet(template: "list/all")]
     public async Task<IActionResult> ListAllAction()
     {
-        if (!_memory.TryGetValue("list_all", out List<UserModel>? usersList))
+        if (!_memory.TryGetValue("List_All", out List<UserModel>? usersList))
         {
             usersList = await _userContext.Users.AsNoTracking().ToListAsync();
 
-            _memory.Set("list_all", usersList, TimeSpan.FromMinutes(1));
-            _logger.LogInformation("### ListAll cached ###");
+            _memory.Set("List_All", usersList, TimeSpan.FromMinutes(1));
+            _logger.LogInformation("### List_All cached ###");
         }
 
         return Ok(usersList!);
     }
 
-    [HttpGet(template: "list/all/{role?}")]
-    public async Task<IActionResult> ListRoleAction([FromRoute] string? role = null)
+    [Authorize(Roles = "admin")]
+    [HttpGet(template: "list/admin")]
+    public async Task<IActionResult> ListAdminAction()
     {
-        if (String.IsNullOrEmpty(role))
+        if (!_memory.TryGetValue("List_Admin", out List<UserModel>? list))
         {
-            return RedirectToAction(nameof(ListAllAction));
+            list = await _userContext.Users.AsNoTracking().Where(u => u.Role == UserModel.RolesEnum.Admin).ToListAsync();
+
+            _memory.Set("List_Admin", list);
+            _logger.LogInformation("### List_Admin cached ###");
         }
 
-        if (Enum.TryParse(role, true, out UserModel.RolesEnum parseRole))
-        {
-            if (!_memory.TryGetValue(role, out List<UserModel>? usersList))
-            {
-                usersList = await _userContext.Users.AsNoTracking().Where(u => u.Role == parseRole).ToListAsync();
-
-                _memory.Set($"list_{parseRole}", usersList, TimeSpan.FromMinutes(1));
-                _logger.LogInformation($"### List{parseRole} cached ###");
-            }
-
-            return Ok(usersList!);
-        }
-        else
-        {
-            return BadRequest($"The following Role doesn't exist: {role}");
-        }
+        return Ok(list);
     }
 
+    [Authorize(Roles = "admin, customer")]
+    [HttpGet(template: "list/customer")]
+    public async Task<IActionResult> ListCustomerAction()
+    {
+        if (!_memory.TryGetValue("List_Customer", out List<UserModel>? list))
+        {
+            list = await _userContext.Users.AsNoTracking().Where(u => u.Role == UserModel.RolesEnum.Customer).ToListAsync();
+
+            _memory.Set("List_Customer", list);
+            _logger.LogInformation("### List_Customer cached ###");
+        }
+
+        return Ok(list);
+    }
+
+    [Authorize(Roles = "admin")]
     [HttpGet(template: "list/{id:int}")]
     public async Task<IActionResult> ListIdAction([FromRoute] int id)
     {
-        if (!_memory.TryGetValue($"list_{id}", out UserModel? user))
+        if (!_memory.TryGetValue($"List_Id:{id}", out UserModel? user))
         {
             try
             {
                 user = await _userContext.Users.AsNoTracking().FirstAsync(u => u.Id == id);
 
-                _memory.Set($"list_{id}", user, TimeSpan.FromMinutes(1));
-                _logger.LogInformation("### ListId cached ###");
+                _memory.Set($"List_Id:{id}", user, TimeSpan.FromMinutes(1));
+                _logger.LogInformation($"### List_Id:{id} cached ###");
             }
             catch
             {
@@ -86,7 +132,7 @@ public class UserController : ControllerBase
             return BadRequest("There's an already User with the same password or Email");
         }
 
-        if (user != null && Enum.TryParse(user.Role, true, out UserModel.RolesEnum parseRole))
+        if (Enum.TryParse(user.Role, true, out UserModel.RolesEnum parseRole))
         {
             UserModel newUser = new UserModel
             {
@@ -98,19 +144,24 @@ public class UserController : ControllerBase
             await _userContext.Users.AddAsync(newUser);
             await _userContext.SaveChangesAsync();
 
-            _memory.Remove("list_all");
-            _memory.Remove($"list_{UserModel.RolesEnum.Admin}");
-            _memory.Remove($"list_{UserModel.RolesEnum.Customer}");
+            _memory.Remove("List_All");
+            _memory.Remove("List_Admin");
+            _memory.Remove("List_Customer");
             _logger.LogInformation("### Lists removed from cache ###");
 
             return CreatedAtAction(nameof(ListIdAction), new { id = newUser.Id }, newUser);
         }
+        else if (user != null)
+        {
+            return BadRequest("The User Credentials doesn't fulfill or match the requirements");
+        }
         else
         {
-            return BadRequest();
+            return BadRequest("User object null");
         }
     }
 
+    [Authorize(Roles = "admin")]
     [HttpPut(template: "update")]
     public async Task<IActionResult> UpdateAction([FromBody] UpdateUserModel newValues)
     {
@@ -154,10 +205,10 @@ public class UserController : ControllerBase
 
             await _userContext.SaveChangesAsync();
 
-            _memory.Remove("list_all");
-            _memory.Remove($"list_{UserModel.RolesEnum.Admin}");
-            _memory.Remove($"list_{UserModel.RolesEnum.Customer}");
-            _memory.Remove($"list_{userToBeUpdated.Id}");
+            _memory.Remove("List_All");
+            _memory.Remove("List_Admin");
+            _memory.Remove("List_Customer");
+            _memory.Remove($"List_Id:{userToBeUpdated.Id}");
             _logger.LogInformation($"### Lists and User:{userToBeUpdated.Id} removed from cache ###");
 
             return NoContent();
@@ -168,6 +219,7 @@ public class UserController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "admin")]
     [HttpDelete(template: "delete/{id:int}")]
     public async Task<IActionResult> DeleteAction([FromRoute] int id)
     {
@@ -177,10 +229,10 @@ public class UserController : ControllerBase
             _userContext.Users.Remove(user);
             await _userContext.SaveChangesAsync();
 
-            _memory.Remove("list_all");
-            _memory.Remove($"list_{UserModel.RolesEnum.Admin}");
-            _memory.Remove($"list_{UserModel.RolesEnum.Customer}");
-            _memory.Remove($"list_{user.Id}");
+            _memory.Remove("List_All");
+            _memory.Remove("List_Admin");
+            _memory.Remove("List_Customer");
+            _memory.Remove($"List_Id:{user.Id}");
             _logger.LogInformation($"### Lists and User:{user.Id} removed from cache ###");
         }
         catch

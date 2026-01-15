@@ -31,3 +31,9 @@ public class UpdateUserModel
     public string? Password { get; set; }
     public string? Email { get; set; }
 }
+
+public class SignInModel
+{
+    public required string NameEmail { get; set; }
+    public required string Password { get; set; }
+}
