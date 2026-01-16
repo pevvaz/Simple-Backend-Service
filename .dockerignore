@@ -1,0 +1,38 @@
+# Build artifacts
+bin/
+obj/
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+out/
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.*
+
+# Databases (SQLite)
+*.db
+*.db-shm
+*.db-wal
+
+# Docker files
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
+# Docs
+README.*
+
+# Temp files
+*.tmp
+*.bak
+*.swp

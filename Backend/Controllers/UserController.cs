@@ -87,7 +87,6 @@ public class UserController : ControllerBase
         return Ok(list);
     }
 
-    [Authorize(Roles = "admin, customer")]
     [HttpGet(template: "list/customer")]
     public async Task<IActionResult> ListCustomerAction()
     {
