@@ -10,13 +10,13 @@ A função geral do serviço é o gerenciamento e armazenamento de usuários (Us
 Primeiramente você precisará do Docker devidamente instaldo e configurado em sua máquina. Após isso, rode os seguintes comandos em sequência:
 
 ### Linux:
->1. `sudo docker build -t servico-backend-image`
->2. `docker run --rm -p 8080:5050 servico-backend-image` 
+>1. `sudo docker build -t servico-backend-image .`
+>2. `sudo docker run --rm -p 8080:5050 servico-backend-image` 
 
 <br>
 
 ### Windows:
->1. `docker build -t servico-backend-image`
+>1. `docker build -t servico-backend-image .`
 >2. `docker run --rm -p 8080:5050 servico-backend-image`
 
 <br>
