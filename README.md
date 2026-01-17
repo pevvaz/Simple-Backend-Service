@@ -12,7 +12,9 @@ Primeiramente você precisará do Docker devidamente instaldo e configurado em s
 ### Linux:
 >1. `sudo docker build -t servico-backend-image`
 >2. `docker run --rm -p 8080:5050 servico-backend-image` 
+
 <br>
+
 ### Windows:
 >1. `docker build -t servico-backend-image`
 >2. `docker run --rm -p 8080:5050 servico-backend-image`
