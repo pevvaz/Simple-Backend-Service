@@ -21,7 +21,6 @@ RUN mkdir -p ./publish/Database/
 
 EXPOSE 5050
 
-# removi a '/' pois foi dito que não há caminho absoluto host
 COPY --from=part-one /app/publish/. ./publish
 
 WORKDIR /app/publish
