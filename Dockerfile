@@ -2,14 +2,11 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS part-one
 
 WORKDIR /app
 
-COPY *.csproj ./
-RUN dotnet restore
-
-COPY Backend/. ./
-RUN dotnet publish \
+COPY *.sln ./
+COPY Backend/. ./Backend/
+RUN dotnet publish "./Backend/Servico Backend.csproj"\
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 
 
