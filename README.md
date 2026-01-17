@@ -20,12 +20,13 @@ Primeiramente você precisará do Docker devidamente instaldo e configurado em s
 <br>
 <br>
 
-## Como Utilizar o Serviço
+# Como Utilizar o Serviço
 Primeiro você cria um User novo em "user/create", logo em seguida você faz login em "user/login" para poder receber a sua Jwt Token. Com o acesso à Token, você poderá usufruir das funcionalidades oferecidas pelas Actions que estão restritas ao Admin.
----
+
+<br>
 <br>
 
-### Funcionalidades Presentes:
+## Funcionalidades Presentes:
  - Criar User;
  - Adicionar User ao banco de dados;
  - Modificar User;
@@ -33,13 +34,13 @@ Primeiro você cria um User novo em "user/create", logo em seguida você faz log
  - Fazer Login;
  - Listar todos os usuários registrados, ou especificados: Admin, Customer.
 
-### Libraries e Frameworks utilizadas:
+## Libraries e Frameworks utilizadas:
  - EF Core (Entity Framework Core);
  - SQLite;
  - Jwt Bearer;
  - Swagger.
 
-### Ferramentas Utilizadas:
+## Ferramentas Utilizadas:
  - Git;
  - Docker;
  - .NET 9.0;
