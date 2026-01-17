@@ -24,7 +24,6 @@ Primeiramente você precisará do Docker devidamente instaldo e configurado em s
 Primeiro você cria um User novo em "user/create", logo em seguida você faz login em "user/login" para poder receber a sua Jwt Token. Com o acesso à Token, você poderá usufruir das funcionalidades oferecidas pelas Actions que estão restritas ao Admin.
 
 ---
-
 <br>
 <br>
 
