@@ -7,7 +7,9 @@ A função geral do serviço é o gerenciamento e armazenamento de usuários (Us
 ## Como buildar
 Primeiramente você precisará do Docker devidamente instaldo e configurado em sua máquina. Após isso, baixe a <a href="#">imagem</a> disponível na página release, e rode o seguinte comando: 
 <br>
-> `docker run --rm -p 8080:5050 container`
+> Windows: `docker run --rm -p 8080:5050 container`
+<br>
+> Linux: `sudo docker run --rm -p 8080:5050 container`
 
 ## Como Utilizar o Serviço
 Primeiro você cria um User novo em "user/create", logo em seguida você faz login em "user/login" para poder receber a sua Jwt Token. Com o acesso à Token, você poderá usufruir das funcionalidades oferecidas pelas Actions que estão restritas ao Admin.
